@@ -1,0 +1,830 @@
+[
+  {
+    "id": "item_01",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:00",
+    "speaker": "Lecturer",
+    "content": "Have you ever noticed that big windows on buildings are bendy and wavy?",
+    "media_url": null
+  },
+  {
+    "id": "item_02",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:04",
+    "speaker": "Lecturer",
+    "content": "It's like the stereotypical look of modern architecture.",
+    "media_url": null
+  },
+  {
+    "id": "item_03",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:06",
+    "speaker": "Lecturer",
+    "content": "Have you ever looked at those wavy windows and wondered if the reflections are so wobbly and distorted from the outside?",
+    "media_url": null
+  },
+  {
+    "id": "item_04",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:11",
+    "speaker": "Lecturer",
+    "content": "Why can people see just fine looking out from the inside?",
+    "media_url": null
+  },
+  {
+    "id": "item_05",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:14",
+    "speaker": "Lecturer",
+    "content": "In fact, when I gently touch this window from the outside, I can easily distort the image in the window.",
+    "media_url": null
+  },
+  {
+    "id": "item_06",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:19",
+    "speaker": "Lecturer",
+    "content": "But nothing of a sort happens when looking out from the inside.",
+    "media_url": null
+  },
+  {
+    "id": "item_07",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:21",
+    "speaker": "Lecturer",
+    "content": "It turns out this wavy window paradox is explained by a key difference between the physics of looking out and looking in.",
+    "media_url": null
+  },
+  {
+    "id": "item_08",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:27",
+    "speaker": "Lecturer",
+    "content": "The fact that windows work at all is a minor miracle of physics.",
+    "media_url": null
+  },
+  {
+    "id": "item_09",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:30",
+    "speaker": "Lecturer",
+    "content": "Light behaves like a wave, so when it passes from a material where it's traveling one speed, like air,",
+    "media_url": null
+  },
+  {
+    "id": "item_10",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:34",
+    "speaker": "Lecturer",
+    "content": "to a material where it's traveling another, like glass, it ends up bending towards the slower material.",
+    "media_url": null
+  },
+  {
+    "id": "item_11",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:38",
+    "speaker": "Lecturer",
+    "content": "There's a mathematical formula called Snell's Law for the amount of light bends.",
+    "media_url": null
+  },
+  {
+    "id": "item_12",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:41",
+    "speaker": "Lecturer",
+    "content": "It depends on the incoming angle on the relative speed of light in the materials.",
+    "media_url": null
+  },
+  {
+    "id": "item_13",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:44",
+    "speaker": "Lecturer",
+    "content": "And while the details are important if you're safe designing a camera lens,",
+    "media_url": null
+  },
+  {
+    "id": "item_14",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:47",
+    "speaker": "Lecturer",
+    "content": "they aren't important at all for our window question.",
+    "media_url": null
+  },
+  {
+    "id": "item_15",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:49",
+    "speaker": "Lecturer",
+    "content": "What matters to us is that the formula is completely symmetric.",
+    "media_url": null
+  },
+  {
+    "id": "item_16",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:52",
+    "speaker": "Lecturer",
+    "content": "If the materials are reversed, then the angles reverse.",
+    "media_url": null
+  },
+  {
+    "id": "item_17",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "00:55",
+    "speaker": "Lecturer",
+    "content": "Which means for light passing through a glass window, the light first passes from air to glass at its bend inwards.",
+    "media_url": null
+  },
+  {
+    "id": "item_18",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:00",
+    "speaker": "Lecturer",
+    "content": "Then passes from the glass back to the air and is corrected back outwards the exact same amount.",
+    "media_url": null
+  },
+  {
+    "id": "item_19",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:04",
+    "speaker": "Lecturer",
+    "content": "Light passing through a window ends up traveling the exact same direction that it started, just offset a little bit.",
+    "media_url": null
+  },
+  {
+    "id": "item_20",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:08",
+    "speaker": "Lecturer",
+    "content": "So as long as you have air sandwiching both sides of a layer of glass,",
+    "media_url": null
+  },
+  {
+    "id": "item_21",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:11",
+    "speaker": "Lecturer",
+    "content": "the glass can rotate or bend quite a lot and not really affect your ability to see through it.",
+    "media_url": null
+  },
+  {
+    "id": "item_22",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:16",
+    "speaker": "Lecturer",
+    "content": "In simple terms, you can see through a window.",
+    "media_url": null
+  },
+  {
+    "id": "item_23",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:18",
+    "speaker": "Lecturer",
+    "content": "If the glass surfaces aren't perfectly parallel, then the relative angles do change a bit.",
+    "media_url": null
+  },
+  {
+    "id": "item_24",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:22",
+    "speaker": "Lecturer",
+    "content": "If the surfaces are, say, a degree off from one another, then the image you see will be displaced by about half a degree.",
+    "media_url": null
+  },
+  {
+    "id": "item_25",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:27",
+    "speaker": "Lecturer",
+    "content": "So if the window varies in thickness, you'll see some distortion, like what you see looking out of old windows.",
+    "media_url": null
+  },
+  {
+    "id": "item_26",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:32",
+    "speaker": "Lecturer",
+    "content": "However, when you're looking at the wavy reflections of trees from the outside of a building,",
+    "media_url": null
+  },
+  {
+    "id": "item_27",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:36",
+    "speaker": "Lecturer",
+    "content": "you're of course not looking at light passing through the glass.",
+    "media_url": null
+  },
+  {
+    "id": "item_28",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:38",
+    "speaker": "Lecturer",
+    "content": "You're looking at light bouncing off of the glass, and that makes all the difference.",
+    "media_url": null
+  },
+  {
+    "id": "item_29",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:42",
+    "speaker": "Lecturer",
+    "content": "Reflections only involve one surface, so they don't have a chance to get corrected the way light does on its way out through the back of a window.",
+    "media_url": null
+  },
+  {
+    "id": "item_30",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:48",
+    "speaker": "Lecturer",
+    "content": "A beam of light coming in at an angle relative to the glass bounces off at the same angle just flipped,",
+    "media_url": null
+  },
+  {
+    "id": "item_31",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:52",
+    "speaker": "Lecturer",
+    "content": "so a one degree deflection of the glass results in a two degree change in the apparent position of the light source.",
+    "media_url": null
+  },
+  {
+    "id": "item_32",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "01:56",
+    "speaker": "Lecturer",
+    "content": "For example, if you're 10 meters away from a window, a one degree deflection of the glass that will move the apparent position of the sun vertically upwards 70 centimeters.",
+    "media_url": null
+  },
+  {
+    "id": "item_33",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:04",
+    "speaker": "Lecturer",
+    "content": "You can see the same effect by tilting a laptop screen towards you.",
+    "media_url": null
+  },
+  {
+    "id": "item_34",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:06",
+    "speaker": "Lecturer",
+    "content": "The apparent positions of reflections move upwards.",
+    "media_url": null
+  },
+  {
+    "id": "item_35",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:09",
+    "speaker": "Lecturer",
+    "content": "So if window glass is a little bit wavy or curved, the light passing through will be essentially fine,",
+    "media_url": null
+  },
+  {
+    "id": "item_36",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:13",
+    "speaker": "Lecturer",
+    "content": "but the image is reflecting off of it will be moved around inconsistently.",
+    "media_url": null
+  },
+  {
+    "id": "item_37",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:16",
+    "speaker": "Lecturer",
+    "content": "It doesn't take much to move the reflection.",
+    "media_url": null
+  },
+  {
+    "id": "item_38",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:18",
+    "speaker": "Lecturer",
+    "content": "Gently touching a window can result in surprisingly large distortions of the reflections in it.",
+    "media_url": null
+  },
+  {
+    "id": "item_39",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:21",
+    "speaker": "Lecturer",
+    "content": "You can try it gently the next time you're in front of a window or mirror.",
+    "media_url": null
+  },
+  {
+    "id": "item_40",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:25",
+    "speaker": "Lecturer",
+    "content": "So the solution to the wavy window paradox is that the path of light passing through a window is miraculously resilient to deviations of the surface,",
+    "media_url": null
+  },
+  {
+    "id": "item_41",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:31",
+    "speaker": "Lecturer",
+    "content": "while reflections off of it are not resilient.",
+    "media_url": null
+  },
+  {
+    "id": "item_42",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:33",
+    "speaker": "Lecturer",
+    "content": "And during the day when it's bright outside, if we're outside a window looking in, we're typically looking at reflections,",
+    "media_url": null
+  },
+  {
+    "id": "item_43",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:38",
+    "speaker": "Lecturer",
+    "content": "while if we're inside looking out, we're looking through the window.",
+    "media_url": null
+  },
+  {
+    "id": "item_44",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:40",
+    "speaker": "Lecturer",
+    "content": "At nighttime, the situation is reversed, and we're more often looking at easily distorted reflections when we're inside,",
+    "media_url": null
+  },
+  {
+    "id": "item_45",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:45",
+    "speaker": "Lecturer",
+    "content": "and we're looking in through the window from the outside.",
+    "media_url": null
+  },
+  {
+    "id": "item_46",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:48",
+    "speaker": "Lecturer",
+    "content": "And that's it.",
+    "media_url": null
+  },
+  {
+    "id": "item_47",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:49",
+    "speaker": "Lecturer",
+    "content": "The next time you successfully look through a window, whether in or out,",
+    "media_url": null
+  },
+  {
+    "id": "item_48",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:52",
+    "speaker": "Lecturer",
+    "content": "remember to say thank you to the symmetry of Snell's Law.",
+    "media_url": null
+  },
+  {
+    "id": "item_49",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "02:58",
+    "speaker": "Lecturer",
+    "content": "Speaking of Snell's Law, you may have spotted a certain adorable friend throughout the video.",
+    "media_url": null
+  },
+  {
+    "id": "item_50",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "03:01",
+    "speaker": "Lecturer",
+    "content": "It's scientifically correct garlic in plushy form.",
+    "media_url": null
+  },
+  {
+    "id": "item_51",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "03:04",
+    "speaker": "Lecturer",
+    "content": "This legitimately adorable creation was cooked up by our teammates over at Minute Food,",
+    "media_url": null
+  },
+  {
+    "id": "item_52",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "03:08",
+    "speaker": "Lecturer",
+    "content": "and yes, it obeys the equivalence principle, the intermediate axis theorem, and makes a great AOL.",
+    "media_url": null
+  },
+  {
+    "id": "item_53",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "03:13",
+    "speaker": "Lecturer",
+    "content": "The garlic plushy is a total steel and you can get it worldwide,",
+    "media_url": null
+  },
+  {
+    "id": "item_54",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "03:16",
+    "speaker": "Lecturer",
+    "content": "but it's just available for a few more days, so click the link in the description or head over to",
+    "media_url": null
+  },
+  {
+    "id": "item_55",
+    "source_file": "lecture.mp4",
+    "modality": "video_transcript",
+    "timestamp": "03:19",
+    "speaker": "Lecturer",
+    "content": "MakeShip.com to get yours while you can. It is super cute and cuddly.",
+    "media_url": null
+  },
+  {
+    "id": "item_56",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "00:00",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 00:00 showing lecture material.",
+    "media_url": "/frames/frame_0000.jpg"
+  },
+  {
+    "id": "item_57",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "00:15",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 00:15 showing lecture material.",
+    "media_url": "/frames/frame_0015.jpg"
+  },
+  {
+    "id": "item_58",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "00:30",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 00:30 showing lecture material.",
+    "media_url": "/frames/frame_0030.jpg"
+  },
+  {
+    "id": "item_59",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "00:45",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 00:45 showing lecture material.",
+    "media_url": "/frames/frame_0045.jpg"
+  },
+  {
+    "id": "item_60",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "01:00",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 01:00 showing lecture material.",
+    "media_url": "/frames/frame_0100.jpg"
+  },
+  {
+    "id": "item_61",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "01:15",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 01:15 showing lecture material.",
+    "media_url": "/frames/frame_0115.jpg"
+  },
+  {
+    "id": "item_62",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "01:30",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 01:30 showing lecture material.",
+    "media_url": "/frames/frame_0130.jpg"
+  },
+  {
+    "id": "item_63",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "01:45",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 01:45 showing lecture material.",
+    "media_url": "/frames/frame_0145.jpg"
+  },
+  {
+    "id": "item_64",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "02:00",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 02:00 showing lecture material.",
+    "media_url": "/frames/frame_0200.jpg"
+  },
+  {
+    "id": "item_65",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "02:15",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 02:15 showing lecture material.",
+    "media_url": "/frames/frame_0215.jpg"
+  },
+  {
+    "id": "item_66",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "02:30",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 02:30 showing lecture material.",
+    "media_url": "/frames/frame_0230.jpg"
+  },
+  {
+    "id": "item_67",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "02:45",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 02:45 showing lecture material.",
+    "media_url": "/frames/frame_0245.jpg"
+  },
+  {
+    "id": "item_68",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "03:00",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 03:00 showing lecture material.",
+    "media_url": "/frames/frame_0300.jpg"
+  },
+  {
+    "id": "item_69",
+    "source_file": "lecture.mp4",
+    "modality": "video_frame_ocr",
+    "timestamp": "03:15",
+    "speaker": "Visual Slide",
+    "content": "Visual frame captured at 03:15 showing lecture material.",
+    "media_url": "/frames/frame_0315.jpg"
+  },
+  {
+    "id": "item_70",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:00",
+    "speaker": "Student Voice Note",
+    "content": "Why do building windows look so wavy and distorted when you look at reflections from the outside",
+    "media_url": null
+  },
+  {
+    "id": "item_71",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:08",
+    "speaker": "Student Voice Note",
+    "content": "but look completely clear when you look through them from the inside?",
+    "media_url": null
+  },
+  {
+    "id": "item_72",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:13",
+    "speaker": "Student Voice Note",
+    "content": "Answer.",
+    "media_url": null
+  },
+  {
+    "id": "item_73",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:15",
+    "speaker": "Student Voice Note",
+    "content": "It comes down to the difference between a reflection and a specular reflection.",
+    "media_url": null
+  },
+  {
+    "id": "item_74",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:21",
+    "speaker": "Student Voice Note",
+    "content": "Looking from the inside, a reflection.",
+    "media_url": null
+  },
+  {
+    "id": "item_75",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:24",
+    "speaker": "Student Voice Note",
+    "content": "This light passes from air into the glass, it bends inward.",
+    "media_url": null
+  },
+  {
+    "id": "item_76",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:29",
+    "speaker": "Student Voice Note",
+    "content": "When it exists the glass back into the air, snales law ensure it bends back outward by",
+    "media_url": null
+  },
+  {
+    "id": "item_77",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:35",
+    "speaker": "Student Voice Note",
+    "content": "the exact same amount.",
+    "media_url": null
+  },
+  {
+    "id": "item_78",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:37",
+    "speaker": "Student Voice Note",
+    "content": "Because the two surface are roughly parallel, the light exists travelling in its original",
+    "media_url": null
+  },
+  {
+    "id": "item_79",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:43",
+    "speaker": "Student Voice Note",
+    "content": "direction just slightly offset, keeping your views straight and clear.",
+    "media_url": null
+  },
+  {
+    "id": "item_80",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:49",
+    "speaker": "Student Voice Note",
+    "content": "Looking from the outside, reflection.",
+    "media_url": null
+  },
+  {
+    "id": "item_81",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:52",
+    "speaker": "Student Voice Note",
+    "content": "It doesn't only involve a single surface, so there is no second bending effect to correct",
+    "media_url": null
+  },
+  {
+    "id": "item_82",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "00:58",
+    "speaker": "Student Voice Note",
+    "content": "the light spot.",
+    "media_url": null
+  },
+  {
+    "id": "item_83",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "01:01",
+    "speaker": "Student Voice Note",
+    "content": "Any tiny one degree curve or flex in the glass doubles the reflection angle to 2 degree.",
+    "media_url": null
+  },
+  {
+    "id": "item_84",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "01:07",
+    "speaker": "Student Voice Note",
+    "content": "Over a distance of few meters, the small angle shift creates a massive visual depletes displacement,",
+    "media_url": null
+  },
+  {
+    "id": "item_85",
+    "source_file": "audio_notes.ogg",
+    "modality": "audio_notes",
+    "timestamp": "01:16",
+    "speaker": "Student Voice Note",
+    "content": "making a reflections look wavy and distorted.",
+    "media_url": null
+  },
+  {
+    "id": "item_86",
+    "source_file": "lecture_notes.txt",
+    "modality": "text_notes",
+    "timestamp": "Section 1",
+    "speaker": "Student Notes",
+    "content": "Key Concepts: Refraction, Reflection, and Distortions in Glass",
+    "media_url": null
+  },
+  {
+    "id": "item_87",
+    "source_file": "lecture_notes.txt",
+    "modality": "text_notes",
+    "timestamp": "Section 2",
+    "speaker": "Student Notes",
+    "content": "1. Refraction and Snell's Law",
+    "media_url": null
+  },
+  {
+    "id": "item_88",
+    "source_file": "lecture_notes.txt",
+    "modality": "text_notes",
+    "timestamp": "Section 3",
+    "speaker": "Student Notes",
+    "content": "When light passes through a window, it enters the glass (bending inward) and then exits back into the air (correcting outward). Because the process is symmetric, the light exits traveling in the same direction it started, making the window resilient to surface imperfections and thickness variations.",
+    "media_url": null
+  },
+  {
+    "id": "item_89",
+    "source_file": "lecture_notes.txt",
+    "modality": "text_notes",
+    "timestamp": "Section 4",
+    "speaker": "Student Notes",
+    "content": "2. Reflection vs. Transmission",
+    "media_url": null
+  },
+  {
+    "id": "item_90",
+    "source_file": "lecture_notes.txt",
+    "modality": "text_notes",
+    "timestamp": "Section 5",
+    "speaker": "Student Notes",
+    "content": "Unlike light passing through glass, reflections only bounce off a single surface. Consequently, they lack the corrective effect of exiting through a second surface. A minor, one-degree deflection in the glass causes a two-degree change in the apparent position of a reflected object (like a tree or the sun), which leads to the visible wobbling.",
+    "media_url": null
+  },
+  {
+    "id": "item_91",
+    "source_file": "lecture_notes.txt",
+    "modality": "text_notes",
+    "timestamp": "Section 6",
+    "speaker": "Student Notes",
+    "content": "3. The Paradox Solved",
+    "media_url": null
+  },
+  {
+    "id": "item_92",
+    "source_file": "lecture_notes.txt",
+    "modality": "text_notes",
+    "timestamp": "Section 7",
+    "speaker": "Student Notes",
+    "content": "During the day, people looking from the inside are viewing transmitted light (clear), while those on the outside are primarily viewing distorted reflections. At night, this relationship flips as indoor lighting makes reflections more dominant from the inside.",
+    "media_url": null
+  }
+]

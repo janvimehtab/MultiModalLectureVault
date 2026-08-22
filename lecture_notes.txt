@@ -1,0 +1,10 @@
+Key Concepts: Refraction, Reflection, and Distortions in Glass
+
+1. Refraction and Snell's Law
+   When light passes through a window, it enters the glass (bending inward) and then exits back into the air (correcting outward). Because the process is symmetric, the light exits traveling in the same direction it started, making the window resilient to surface imperfections and thickness variations.
+
+2. Reflection vs. Transmission
+   Unlike light passing through glass, reflections only bounce off a single surface. Consequently, they lack the corrective effect of exiting through a second surface. A minor, one-degree deflection in the glass causes a two-degree change in the apparent position of a reflected object (like a tree or the sun), which leads to the visible wobbling.
+
+3. The Paradox Solved
+   During the day, people looking from the inside are viewing transmitted light (clear), while those on the outside are primarily viewing distorted reflections. At night, this relationship flips as indoor lighting makes reflections more dominant from the inside.
