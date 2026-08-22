@@ -2,12 +2,12 @@ import React from 'react'
 import { Film, Quote, Clock, Sparkles, ImageOff } from 'lucide-react'
 
 // Right panel: keyframe photo player + transcript quote viewer + sidekick info card.
-export default function EvidenceViewer({ evidence, keyStatus }) {
+export default function EvidenceViewer({ evidence, keyStatus, fallbackFrame = '/frames/frame_0000.jpg' }) {
   const handleImgError = (e) => {
-    // Broken/missing frame -> fall back to frame_0000.jpg (guarded once).
+    // Broken/missing frame -> fall back to this lecture's frame_0000.jpg (guarded once).
     if (!e.target.dataset.fallback) {
       e.target.dataset.fallback = '1'
-      e.target.src = '/frames/frame_0000.jpg'
+      e.target.src = fallbackFrame
     } else {
       e.target.dataset.fallback = '2'
       e.target.style.display = 'none'

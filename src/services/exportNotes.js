@@ -1,0 +1,111 @@
+// Study Export — render a chat thread as clean, printable revision notes
+// (with the cited keyframes) in a new window, then trigger the print dialog.
+
+const CITE_RE = /\[?\(?\s*(?:[\w.\- ]+@\s*)?(\d{2}:\d{2})\s*\)?\]?/g
+
+const esc = (s) =>
+  String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
+// Pull unique cited timestamps out of an AI answer, in order of appearance.
+function extractCitations(text) {
+  const stamps = []
+  let m
+  CITE_RE.lastIndex = 0
+  while ((m = CITE_RE.exec(text)) !== null) {
+    if (!/[[\](@)]/.test(m[0])) continue
+    if (!stamps.includes(m[1])) stamps.push(m[1])
+  }
+  return stamps
+}
+
+export function exportChatToPrint(chat, lecture, resolveEvidence) {
+  const origin = window.location.origin
+  const when = new Date().toLocaleString()
+  const messages = chat.messages || []
+
+  const blocks = messages
+    .map((msg) => {
+      if (msg.role === 'user') {
+        return `<div class="q"><span class="qtag">Q</span><p>${esc(msg.text)}</p></div>`
+      }
+      const stamps = extractCitations(msg.text)
+      const cleaned = esc(msg.text)
+      const badge =
+        msg.source === 'sidekick'
+          ? '<span class="badge sidekick">Outside lecture scope · AI tutor</span>'
+          : msg.source === 'offline'
+            ? '<span class="badge offline">Offline retrieval</span>'
+            : '<span class="badge grounded">Grounded in lecture</span>'
+
+      const frames = stamps
+        .map((stamp) => {
+          const ev = resolveEvidence(stamp)
+          const url = ev.frame.startsWith('http') ? ev.frame : origin + ev.frame
+          return `<figure class="frame">
+              <img src="${url}" onerror="this.onerror=null;this.src='${origin}${lecture.frameBase}/frame_0000.jpg'" alt="Frame ${esc(stamp)}" />
+              <figcaption><b>${esc(stamp)}</b> — ${esc(ev.speaker)}<br/><span class="quote">“${esc(ev.quote)}”</span></figcaption>
+            </figure>`
+        })
+        .join('')
+
+      return `<div class="a">
+          <div class="ahead"><span class="atag">A</span>${badge}</div>
+          <p class="atext">${cleaned}</p>
+          ${frames ? `<div class="frames">${frames}</div>` : ''}
+        </div>`
+    })
+    .join('')
+
+  const html = `<!doctype html><html><head><meta charset="utf-8"/>
+    <title>${esc(chat.title)} — LectureLens Revision Notes</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family: 'Segoe UI', system-ui, sans-serif; color: #0f172a; margin: 0; padding: 40px; background: #fff; }
+      .doc { max-width: 780px; margin: 0 auto; }
+      header { border-bottom: 3px solid ${lecture.accent}; padding-bottom: 14px; margin-bottom: 24px; }
+      .brand { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: ${lecture.accent}; font-weight: 700; }
+      h1 { font-size: 26px; margin: 6px 0 4px; }
+      .meta { font-size: 12px; color: #64748b; }
+      .q { background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 10px 14px; margin: 20px 0 8px; display: flex; gap: 10px; align-items: flex-start; }
+      .q p { margin: 0; font-weight: 600; font-size: 15px; }
+      .qtag { background: #3b82f6; color: #fff; font-weight: 700; font-size: 12px; border-radius: 6px; padding: 2px 8px; }
+      .a { padding: 4px 2px 8px; margin-bottom: 10px; }
+      .ahead { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+      .atag { background: #0f172a; color: #fff; font-weight: 700; font-size: 12px; border-radius: 6px; padding: 2px 8px; }
+      .atext { margin: 0 0 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+      .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+      .badge.grounded { background: #dbeafe; color: #1d4ed8; }
+      .badge.offline { background: #fef3c7; color: #b45309; }
+      .badge.sidekick { background: #f3e8ff; color: #7e22ce; }
+      .frames { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
+      .frame { margin: 0; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: #f8fafc; break-inside: avoid; }
+      .frame img { width: 100%; display: block; aspect-ratio: 16/9; object-fit: cover; background: #0f172a; }
+      figcaption { font-size: 11px; padding: 8px 10px; color: #334155; }
+      .quote { color: #64748b; font-style: italic; }
+      footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 12px; font-size: 11px; color: #94a3b8; }
+      @media print { body { padding: 0; } .frame { break-inside: avoid; } }
+    </style></head>
+    <body><div class="doc">
+      <header>
+        <div class="brand">LectureLens · Revision Notes</div>
+        <h1>${esc(chat.title)}</h1>
+        <div class="meta">${esc(lecture.title)} · ${esc(lecture.subject)} · Exported ${esc(when)}</div>
+      </header>
+      ${blocks || '<p>No messages in this thread yet.</p>'}
+      <footer>Generated by LectureLens — answers grounded in your lecture media.</footer>
+    </div>
+    <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 400); };<\/script>
+    </body></html>`
+
+  const win = window.open('', '_blank')
+  if (!win) {
+    alert('Please allow pop-ups to export your revision notes.')
+    return
+  }
+  win.document.open()
+  win.document.write(html)
+  win.document.close()
+}

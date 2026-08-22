@@ -27,10 +27,16 @@ React, Vite, Tailwind CSS and Lucide Icons, built into the existing repo
 - Robust OUT_OF_SCOPE detection (`.toUpperCase().includes`)
 - Offline keyword-search fallback with "Offline Mode" badge
 - Clickable timestamp citations → keyframe + quote in evidence viewer, broken-image fallback
-- Voice input with unsupported/denied fallback; empty-send guard
+- Voice input with unsupported/denied fallback (+ no-result timeout); empty-send guard
 - localStorage chat history, auto-title from first query, New Chat, delete, quick-start chips
+- **Multi-Lecture Vault** (`src/data/lectures.js`): sidebar lecture switcher across 3 lectures
+  (Wavy Window Paradox / Neural Networks 101 / Photosynthesis), each with its own data,
+  frames (`/frames/<id>/`), accent + quick prompts. Switching starts a lecture-bound chat;
+  chats carry a lecture accent dot; header active-lecture chip. Verified 13/13 (iteration_2).
+- **Study Export** (`src/services/exportNotes.js`): Export Notes button prints a clean revision
+  sheet (Q/A + cited keyframes) via a new window. Disabled on empty threads.
 
 ## Backlog / Next
 - P1: Image-query pipeline (currently mock attachment chip only)
-- P2: Multi-lecture library / switching
-- P2: Export chat as study notes
+- P2: Nearest-available-frame matching for lectures with sparse frames
+- P2: Add more lectures / user-uploaded lecture ingestion

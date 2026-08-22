@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react'
 import { Radio, FileVideo, FileAudio, FileText, UploadCloud, X, CheckCircle2 } from 'lucide-react'
 
 // Active media status bar + mock uploader.
-export default function Header({ mediaSources }) {
+export default function Header({ mediaSources, lecture }) {
   const [open, setOpen] = useState(false)
   const [uploaded, setUploaded] = useState(null)
   const fileRef = useRef(null)
@@ -36,6 +36,14 @@ export default function Header({ mediaSources }) {
       </div>
 
       <div className="hidden items-center gap-2 md:flex">
+        <span
+          data-testid="active-lecture-chip"
+          className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+          style={{ borderColor: (lecture?.accent || '#3b82f6') + '55', color: lecture?.accent || '#3b82f6', backgroundColor: (lecture?.accent || '#3b82f6') + '14' }}
+        >
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: lecture?.accent || '#3b82f6' }} />
+          {lecture?.title || 'Lecture'}
+        </span>
         <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
           <Radio size={12} className="animate-blink" />
           Media Active
