@@ -1,5 +1,5 @@
 import React from 'react'
-import { Sparkles, BookOpenCheck, WifiOff, User } from 'lucide-react'
+import { Sparkles, BookOpenCheck, WifiOff, User, AlertTriangle } from 'lucide-react'
 
 const CITATION_RE = /\[?\(?\s*(?:[\w.\- ]+@\s*)?(\d{2}:\d{2})\s*\)?\]?/g
 
@@ -44,6 +44,20 @@ export default function AnswerCard({ message, onCite }) {
           <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#2d2e30] text-[#9aa0a6]">
             <User size={14} />
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (source === 'error') {
+    return (
+      <div data-testid="error-message" className="flex animate-fadeup justify-start">
+        <div
+          data-testid="error-notification"
+          className="flex max-w-[85%] items-center gap-2.5 rounded-2xl rounded-tl-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200"
+        >
+          <AlertTriangle size={16} className="shrink-0 text-amber-400" />
+          <span>{text}</span>
         </div>
       </div>
     )

@@ -21,6 +21,17 @@ React, Vite, Tailwind CSS and Lucide Icons, built into the existing repo
 - `EvidenceViewer.jsx` — keyframe player w/ onError fallback to frame_0000.jpg + transcript quote
 - `App.jsx` — orchestrator (chats, send flow, evidence resolution)
 
+## Resilience refactor (2026-06) — verified iteration_6
+- PER-REQUEST recovery: no sticky global offline flag; every query re-attempts online fresh
+  (verified via console — online RAG is re-tried on each new query)
+- Safe context assembly: assembleContext()/buildRagPrompt() use (x||[]) defaults; empty
+  context still queries Gemini with a "No direct context match found" note → clean OOS
+- Robust output sanitization: sanitizeText() strips ``` fences + parses stray JSON in try-catch
+- Sidekick (Pipeline B) failures return formatted text, never crash the thread
+- 10s fetch timeout (per spec); on total failure → friendly inline error notification
+  (AnswerCard source 'error', data-testid=error-notification), app stays usable (not sticky)
+- When online fails but the question is in-scope → offline-grounded answer WITH citations
+
 ## Implemented (2026-06)
 - Gemini-minimalist dark theme (black #131314 / card #1e1f20 / accent #a8c7fa), decluttered
 - Collapsible left sidebar (272px ⇄ 72px icon rail) via PanelLeft toggle

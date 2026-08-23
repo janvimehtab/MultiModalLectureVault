@@ -1,0 +1,44 @@
+{
+  "summary": "Frontend-only validation of the offline-lock bug fix + robust parsing + timeout notification + sidekick safeguard + regressions. 13/18 core assertions PASS. The critical bug fix (NO STICKY OFFLINE) is verified working at the code path level — console proves every new query re-attempts the online pipeline fresh ('Online RAG failed for THIS query only' fires on the SECOND query after unroute, meaning no sticky flag). Fenced-JSON sanitisation, friendly timeout notification, sidekick fallback and UI regressions all pass. The remaining 'failures' are caused by real-world Gemini 429 rate limiting during the run (same intermittent issue reported in iteration_5), not by a sticky offline lock.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "T1 recovery after network restore — 'Explain Snell's Law' second query after unroute",
+        "issue": "Even with page.unroute called, the online RAG call was re-attempted (console: '[LectureLens] Online RAG failed for THIS query only: Request timed out') but the LIVE Gemini API 10s AbortController fired, so the query fell into recoverThisQuery -> offline. The bug-fix contract IS satisfied (fresh online attempt each time, no sticky flag) but the assertion expecting a grounded-badge/sidekick-badge on the second query cannot always be observed when the live API is rate-limited/slow. Recommend: bump FETCH_TIMEOUT to 15s (Gemini live calls take 5-15s per problem statement), and/or retry once with RAG_KEY_BACKUP before timing out.",
+        "affected_selectors": ["grounded-badge", "sidekick-badge"]
+      },
+      {
+        "flow": "T2 recovery after restore — 'What is reflection?' after unblocking",
+        "issue": "Same 10s timeout + 429 rate-limit combination — console shows HTTP 429 then 'Request timed out'. App falls back to offline grounded (not counted as grounded-badge). Same root cause and mitigation as above.",
+        "affected_selectors": ["grounded-badge"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Consider bumping FETCH_TIMEOUT in src/services/gemini.js from 10000ms to 15000ms — the problem statement itself notes live Gemini calls take 5-15s, so a 10s window frequently aborts a valid in-flight response and falls back to offline, hiding grounded-badge answers even when the online call would have succeeded.",
+    "On HTTP 429 from Pipeline A (runRag), the code already retries with RAG_KEY_BACKUP — good. Consider the same 429-retry inside runSidekick loop iteration (it already tries next key on any error, so this is fine).",
+    "Recovery assertion T1/T2 fails intermittently due to LIVE-API 429s — the fix itself is correct (verified via console). Consider adding a small exponential backoff + 1 retry for 429 in runRag before falling through to recoverThisQuery.",
+    "data-testid=lecture-video is only rendered inside EvidenceViewer once a citation is clicked / evidence is set; before any citation click the panel shows a 'Lecture Video Ready' placeholder without the video element. If the intent is that the video element should always be in the DOM, add data-testid=lecture-video to the placeholder wrapper OR keep the <video> mounted and toggle visibility. (During T3 the citation-click DID render lecture-video and evidence-quote correctly, so end-to-end flow works.)"
+  ],
+  "critical_code_review_comments": [
+    "src/services/gemini.js: PER-REQUEST recovery contract is correctly implemented — askQuestion() has no module-level offline flag; every call unconditionally enters the try{ runRag } block. Verified by console: after page.unroute the SECOND query still logs '[LectureLens] Online RAG failed for THIS query only: Request timed out', proving a fresh online attempt was made. Bug fix VALID.",
+    "sanitizeText() correctly strips ```json fences and unwraps {answer:...} — verified with mocked fenced response: rendered plain 'Reflection is when light bounces off a surface' with a working citation-0030 pill; no backticks, no raw JSON braces leaked to the DOM.",
+    "callGemini(): AbortController + 10s timeout works and correctly normalises AbortError -> err.isTimeout=true so recoverThisQuery renders 'Request timed out — please try again.' (verified in T2).",
+    "recoverThisQuery(): correctly picks isTimeout branch text vs generic network branch. For truly out-of-scope AND all-online-failed case, returns source:'error' -> AnswerCard renders data-testid=error-notification with amber styling. Verified live.",
+    "assembleContext() and buildRagPrompt() use safe (x||[]) defaults — no crashes on empty context observed.",
+    "sidekickOrCleanOOS() wraps runSidekick in try/catch and never throws to UI — verified when all sidekick keys 403/429 in T2 the UI still received a clean error-notification instead of a stack trace.",
+    "MINOR: FETCH_TIMEOUT=10000ms is on the tight side vs the problem statement's own note that live calls take 5-15s. Recommend 15000ms."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "13/18 assertions PASS. Core bug fix (no sticky offline), robust parsing, friendly timeout, sidekick safeguard, all regressions PASS. 5 failures all stem from either (a) live Gemini 429 rate limiting combined with 10s timeout preventing grounded-badge on recovery queries, or (b) lecture-video only rendered after citation click (not a regression, verified working in T3)."},
+  "test_credentials": "None (no app auth). Gemini keys in .env verified present.",
+  "seed_data_creation": "None. localStorage cleared at run start.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Desktop 1920x900. Use page.route('**generativelanguage.googleapis.com**', ...) to abort/fulfill. Verified testids: search-input, send-btn, grounded-badge, offline-badge, sidekick-badge, sidekick-message, error-message, error-notification, citation-<hhmm>, evidence-quote, ai-message, sidebar-toggle, mic-btn, new-chat-btn, lecture-video (mounts after citation click). IMPORTANT: (1) The bug fix IS working — verify via console logs, not just badge presence; look for '[LectureLens] Online RAG failed for THIS query only:' on EVERY failed query (proves per-request retry, no sticky flag). (2) Live Gemini RAG key intermittently 429s; combined with the 10s AbortController this can drop recovery queries into offline instead of grounded — this is a timeout/rate-limit issue, NOT a sticky-offline bug. (3) VITE_GEMINI_SIDEKICK_KEY still 403s (unchanged from iter_4/5) but runSidekick correctly falls through to RAG keys. (4) Fenced-JSON mock test is the most reliable way to prove sanitizeText() works.",
+  "rca of the issue": "The primary bug fix (no sticky offline lock) IS verified correct. Reproduction of per-request retry: (1) page.route abort all Gemini calls, (2) ask Q1 -> app renders offline-badge (no crash, no hang), (3) page.unroute, (4) ask Q2 -> console emits '[LectureLens] Online RAG failed for THIS query only: Request timed out' AGAIN — this log line only fires from the try{runRag} branch inside askQuestion, proving the online attempt was made fresh on Q2. Therefore no sticky flag exists. The reason Q2 does not always render grounded-badge is the LIVE Gemini API returned 429 rate-limit and the 10s AbortController aborted the retry-with-backup — the code then correctly falls into recoverThisQuery. Mitigation: raise FETCH_TIMEOUT to 15s to match Gemini's own 5-15s response window, and add an explicit 429-with-backoff retry inside runRag before the throw."
+}
