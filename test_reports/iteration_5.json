@@ -1,0 +1,35 @@
+{
+  "summary": "Frontend-only validation of the 3 new refactors (Lecture Sync video panel, continuous mic, multi-modal RAG citations) + regressions. 6/7 core tests PASS. One TEST-ENV limitation and one LIVE-API rate-limit finding block full validation of the timestamp-seek assertion. Refactors are correctly implemented at the code level; the seek/citation flow could not be observed only because RAG returned 429 for the canonical reflection question during this run.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "RAG grounded answer for canonical lecture question 'What is reflection of light?'",
+        "issue": "Both attempts routed to sidekick-message (Outside Lecture Scope). Console shows HTTP 429 on the RAG key followed by 'signal is aborted without reason' (25s AbortController timeout), then sidekick fallback (SIDEKICK 403 -> next key 429 -> success). Because Pipeline A failed with 429, the offline OOS fallback took over and lecture-scope classification for a canonical lecture question was lost. This makes the citation-click -> video seek assertion untestable (no citation pills rendered). Note: 'Summarize the audio notes' in the SAME session succeeded and returned grounded-badge with [Audio Notes] labels — so RAG key is not fully dead, but is intermittently rate limited (429).",
+        "affected_selectors": ["grounded-badge", "citation-<hhmm>", "lecture-video.currentTime"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "The RAG Gemini key is intermittently returning HTTP 429 (rate-limited). When Pipeline A 429s, the offline-engine + sidekick fallback silently drops the OUT_OF_SCOPE decision to false and routes real lecture questions ('What is reflection of light?') to sidekick as Outside Lecture Scope, hiding the lecture answer. Consider: (a) retrying the RAG call once on 429 (after a short backoff) before falling back, (b) rotating to RAG_BACKUP on 429 like you already do on other errors, and (c) if RAG ultimately fails but the offlineSearch has strong lecture hits, render an OFFLINE grounded answer with citations instead of a sidekick fallback so citation-click / video-seek still works.",
+    "VITE_GEMINI_SIDEKICK_KEY still returns HTTP 403 on every call (same as iteration_4). Fallback masks it but the dedicated key is dead — replace or refresh it, and re-check status pill logic so 'Sidekick live' reflects reality.",
+    "(Test-env only) Playwright's bundled Chromium does not include the H.264/AVC codec so the default lecture.mp4 triggers onError -> video-placeholder swap even for the working /lecture.mp4 file (canPlayType('video/mp4; codecs=\"avc1.42E01E\"') returns ''). This is NOT a real-user bug — real Chrome/Safari/Firefox play the file fine (verified: curl HEAD returns 200, content-type video/mp4, 12,790,615 bytes). It just means seek/currentTime validation cannot be automated in the headless preview browser."
+  ],
+  "critical_code_review_comments": [
+    "src/components/EvidenceViewer.jsx: Refactor looks correct — 'Lecture Sync' header wired to data-testid=lecture-sync-title, HTML5 video with key={videoSrc} to force remount on lecture change, onError -> video-placeholder swap, useEffect seeks currentTime and calls play() with .catch() to swallow autoplay-blocked rejections, toSeconds() defaults to 0 for invalid input. All good.",
+    "src/components/SearchPanel.jsx: Continuous mic implemented correctly — continuous=true, interimResults=true, manualStopRef gate, onend restart, graceful onerror for not-allowed / service-not-allowed, and SR-missing fallback that pre-fills a sample query so the search-input stays usable. Verified in-app: red ring on, revert on off, input remains typeable after toggle. No crash/freeze.",
+    "src/services/gemini.js: The refactor to weight transcript/audio_notes/text_notes equally works ('Summarize the audio notes' returned a fully grounded answer with 5+ [Audio Notes] label references). However: on RAG HTTP 429, the pipeline aborts and drops through the offline+sidekick fallback which routes lecture questions to sidekick. Recommend adding an explicit 429 retry / backup-key rotation BEFORE giving up Pipeline A's grounded classification.",
+    "The video element uses preload='metadata' which is fine, but consider adding an explicit poster attribute so real browsers on slow networks show something nicer than a black rectangle before metadata loads."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "6/7 core tests pass. 1 blocked by RAG 429 rate limit (citation/seek) + 1 headless-codec limitation (video playback in test env only)."},
+  "test_credentials": "None (no app auth). /app/memory/test_credentials.md not required.",
+  "seed_data_creation": "None. localStorage cleared at start of run.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Desktop 1920x800, localStorage cleared each run. Verified testids: lecture-sync-title, lecture-video, video-placeholder, evidence-quote, evidence-speaker, search-input, send-btn, mic-btn, export-btn, sidebar, sidebar-toggle, new-chat-btn, lecture-switcher, lecture-option-neural-nets, sidekick-badge, sidekick-message, grounded-badge, ai-message, citation-<hhmm>. IMPORTANT: (1) Bundled Playwright Chromium lacks H.264 so /lecture.mp4 triggers onError -> placeholder — validate video/seek via unit test or a locally-launched Chrome-with-codecs. (2) The RAG key hits 429 intermittently; if reflection Q routes to sidekick, that's usually the 429 path — inspect console for 'RAG pipeline failed, using offline engine: signal is aborted without reason' and HTTP 429 on generativelanguage.googleapis.com. (3) Audio-notes summarization is the most reliable RAG smoke test right now — it returned grounded with 5+ [Audio Notes] labels. (4) SIDEKICK_KEY still 403s (unchanged from iter_4).",
+  "rca of the issue": "Reflection question routed to sidekick: RAG API call for the primary key returned HTTP 429 (rate limited). Client's 25s AbortController then fired ('signal is aborted without reason'). The catch path falls through to offlineSearch + sidekickOrCleanOOS which, without a real Pipeline-A OOS classification, defaulted the question to Outside Lecture Scope and asked the sidekick model to answer. Reproduction: fresh localStorage, ask 'What is reflection of light?', console shows: 'Failed to load resource: 429' -> '[LectureLens] RAG pipeline failed, using offline engine: signal is aborted without reason' -> '[LectureLens] Sidekick key failed (HTTP 403), trying next…' -> '[LectureLens] Sidekick key failed (HTTP 429), trying next…' -> sidekick-message rendered. Mitigation: on Pipeline A 429, retry-once with backup key before falling back, OR when offline hits are strong render an OFFLINE grounded answer with citations instead of a sidekick reply, so citation-click -> seek still works."
+}

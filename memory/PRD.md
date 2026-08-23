@@ -25,19 +25,22 @@ React, Vite, Tailwind CSS and Lucide Icons, built into the existing repo
 - Gemini-minimalist dark theme (black #131314 / card #1e1f20 / accent #a8c7fa), decluttered
 - Collapsible left sidebar (272px ⇄ 72px icon rail) via PanelLeft toggle
 - LIVE Gemini via user keys, model `gemini-3.6-flash` (thinking-part-safe extraction, 25s timeout)
-- Dual-bot pipeline A (RAG, temp 0.0) + B (Sidekick, temp 0.7, glowing badge)
-  - NOTE: user's dedicated SIDEKICK key returns HTTP 403 (unauthorized); Pipeline B
-    gracefully falls back to the working RAG key(s) so the tutor still answers
-- Strict out-of-scope: Pipeline A OUT_OF_SCOPE → Sidekick or clean OOS message (never leaks lecture text)
-- Offline engine uses whole-word (\b) matching + ≥2 distinct hits to avoid false positives
-- Clickable citations → keyframe + quote; broken-image onError fallback to lecture frame_0000.jpg
-- Voice input (Web Speech + timeout fallback); empty-send guard
-- localStorage chats, auto-title, New Chat, delete, quick-start chips
-- Multi-Lecture Vault (`src/data/lectures.js`): 3 lectures with own data/frames/prompts/accent
-- Study Export (`src/services/exportNotes.js`): printable revision notes with cited frames
-- Tested: iteration_1..4 (latest 5/5 live-Gemini OOS retest 100%)
+- **Lecture Sync** right panel: HTML5 `<video src=/lecture.mp4>` that seeks to the cited
+  timestamp and plays; invalid stamp → 0s; missing file → onError "Lecture Video Ready" placeholder.
+  `public/lecture.mp4` (12MB) serves the default lecture; other lectures show the placeholder.
+- **Continuous mic**: webkitSpeechRecognition continuous+interimResults, restarts through
+  pauses until user toggles off, try/catch + graceful onerror (no freeze)
+- **Multi-modal RAG prompt**: weights transcript/audio_notes/text_notes equally, source-labeled
+  citations ([Video Transcript @ MM:SS] / [Audio Notes] / [Summary Notes]), OUT_OF_SCOPE if missing from all
+- Dual-bot A (RAG) + B (Sidekick, glowing badge); Sidekick key 403 → falls back to RAG key
+- Offline engine: whole-word (\b) + corpus-wide coverage classifier — legit lecture questions
+  return grounded citations even when RAG is rate-limited (429); off-topic → OUT_OF_SCOPE (no leak)
+- Clickable citations → seek video + quote/speaker; voice input; empty-send guard
+- localStorage chats, auto-title, New Chat, delete, quick chips
+- Multi-Lecture Vault (3 lectures) + Study Export (printable notes with cited frames)
+- Tested iteration_1..5 (latest 6/7; remaining = headless H.264 codec limit + transient API 429, both env/quota, now gracefully handled)
 
-## Backlog / Next
-- Replace the dead VITE_GEMINI_SIDEKICK_KEY (403) with a valid key; reflect real key status
+## Known limits / Backlog
+- User's VITE_GEMINI_SIDEKICK_KEY returns 403 (dead) — masked by RAG-key fallback; replace it
+- RAG key hits intermittent 429 (quota) — handled via backup key + grounded-offline fallback
 - P1: Image-query pipeline (currently mock attachment chip only)
-- P2: Nearest-available-frame matching for lectures with sparse frames

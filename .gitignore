@@ -27,3 +27,9 @@ yarn-error.log*
 !.vscode/settings.json
 __pycache__
 *.pyc
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials

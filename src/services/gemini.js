@@ -16,13 +16,22 @@ const ENDPOINT = (key) =>
 const RAG_SYSTEM_PROMPT = (sampleData) =>
   `You are an academic retrieval engine. Answer the user's question using ONLY the provided JSON context.
 
-CRITICAL GROUNDING RULES FOR CITATIONS:
-1. Do NOT cite a timestamp or frame if it only contains the title, question heading, or topic intro (e.g., "What is Reflection?").
-2. ALWAYS cite the exact timestamp/frame where the ACTUAL DEFINITION, FORMULA, or DIAGRAM EXPLANATION is presented.
-3. If an explanation spans multiple frames, cite the primary frame containing the clearest visual diagram or definition.
-4. If the query is not in the context, output EXACTLY: 'OUT_OF_SCOPE'.
+The context contains multiple modalities. Search ALL of them EQUALLY and weight them the same:
+- "video_transcript" (spoken lecture, has an MM:SS timestamp)
+- "video_frame_ocr" (on-screen slide/diagram text, has an MM:SS timestamp)
+- "audio_notes" (the student's recorded voice notes)
+- "text_notes" (the student's written summary notes)
 
-Always include the supporting timestamps inline in [MM:SS] format so the student can jump to the exact evidence.
+CRITICAL GROUNDING & CITATION RULES:
+1. Do NOT cite a timestamp/frame that only contains a title, question heading or topic intro (e.g., "What is Reflection?").
+2. ALWAYS cite the exact place where the ACTUAL DEFINITION, FORMULA, or DIAGRAM EXPLANATION appears.
+3. Explicitly label the SOURCE of every piece of evidence you use, inline, using these exact formats:
+   - Video transcript / slide: [Video Transcript @ MM:SS]  (always include the MM:SS timestamp)
+   - Audio voice notes:        [Audio Notes]
+   - Written summary notes:    [Summary Notes]
+4. If an explanation spans multiple moments, cite the primary one with the clearest definition or diagram.
+5. Blend evidence from transcript, audio_notes AND text_notes when they each add something — do not rely on transcript alone.
+6. STRICT: If the information is missing from ALL sources (transcript, audio_notes AND text_notes), output EXACTLY: 'OUT_OF_SCOPE'. Never hallucinate, never blend in irrelevant notes to fake an answer.
 
 Context Data: ${JSON.stringify(sampleData)}`
 
@@ -122,10 +131,23 @@ function tokenize(str) {
 export function offlineSearch(query, sampleData) {
   const qTokens = tokenize(query)
   const wordRe = (t) => new RegExp('\\b' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i')
+
+  // Corpus-wide coverage: which distinct query words appear ANYWHERE in the
+  // lecture (whole-word, so 'won' never matches 'wondered'). This keeps genuine
+  // lecture questions in-scope even when the key definition and its supporting
+  // detail live in separate segments.
+  const matchedGlobal = new Set()
+  sampleData.forEach((item) => {
+    const text = item.content.toLowerCase()
+    qTokens.forEach((t) => {
+      if (wordRe(t).test(text)) matchedGlobal.add(t)
+    })
+  })
+
+  // Rank the best matching segments for the citations.
   const scored = sampleData
     .map((item) => {
       const text = item.content.toLowerCase()
-      // distinct whole-word matches (avoids 'won' matching 'wondered')
       const hits = qTokens.filter((t) => wordRe(t).test(text))
       let score = hits.length
       if (item.modality === 'video_frame_ocr') score -= 0.5
@@ -135,13 +157,11 @@ export function offlineSearch(query, sampleData) {
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
 
-  const topDistinct = scored[0]?.distinct || 0
-  // Low-confidence -> flag out-of-scope so the caller routes to Pipeline B
-  // instead of leaking irrelevant lecture text (e.g. "Who won the World Cup?").
-  // Require >=2 distinct query words to match, unless the query itself is a
-  // single meaningful term.
-  const minNeeded = qTokens.length <= 1 ? 1 : 2
-  const outOfScope = qTokens.length === 0 || scored.length === 0 || topDistinct < minNeeded
+  // Out-of-scope only when almost nothing matches the lecture. Short queries
+  // need at least 1 matching term; longer queries need at least 2 distinct
+  // terms present in the material (guards "Who won the World Cup?").
+  const need = qTokens.length <= 2 ? 1 : 2
+  const outOfScope = qTokens.length === 0 || scored.length === 0 || matchedGlobal.size < need
 
   if (outOfScope) {
     return { role: 'model', source: 'offline', outOfScope: true, text: 'OUT_OF_SCOPE' }

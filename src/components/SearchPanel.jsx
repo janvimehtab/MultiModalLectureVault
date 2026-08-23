@@ -9,6 +9,9 @@ export default function SearchPanel({ onSend, busy }) {
   const [attachment, setAttachment] = useState(null)
   const recogRef = useRef(null)
   const taRef = useRef(null)
+  const manualStopRef = useRef(false)
+  const baseRef = useRef('')
+  const finalRef = useRef('')
 
   const canSend = value.trim().length > 0 && !busy
 
@@ -34,6 +37,19 @@ export default function SearchPanel({ onSend, busy }) {
     }
   }
 
+  // Continuous voice input: stays listening through short pauses until the
+  // user explicitly toggles the mic off. Falls back gracefully if the Web
+  // Speech API is unsupported or permission is denied (never freezes the bar).
+  const stopMic = () => {
+    manualStopRef.current = true
+    try {
+      recogRef.current?.stop()
+    } catch {
+      /* ignore */
+    }
+    setListening(false)
+  }
+
   const toggleMic = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR) {
@@ -41,38 +57,56 @@ export default function SearchPanel({ onSend, busy }) {
       return
     }
     if (listening) {
-      recogRef.current?.stop()
+      stopMic()
       return
     }
     try {
       const recog = new SR()
       recog.lang = 'en-US'
-      recog.interimResults = false
+      recog.continuous = true
+      recog.interimResults = true
       recog.maxAlternatives = 1
-      let gotResult = false
-      let fallbackTimer = null
+
+      manualStopRef.current = false
+      baseRef.current = value ? value.trim() + ' ' : ''
+      finalRef.current = ''
+
       recog.onresult = (e) => {
-        gotResult = true
-        const t = e.results?.[0]?.[0]?.transcript
-        if (t) setValue((v) => (v ? v + ' ' : '') + t)
+        let interim = ''
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const chunk = e.results[i][0]?.transcript || ''
+          if (e.results[i].isFinal) finalRef.current += chunk + ' '
+          else interim += chunk
+        }
+        setValue((baseRef.current + finalRef.current + interim).replace(/\s+/g, ' ').trimStart())
       }
-      recog.onerror = () => {
+
+      recog.onerror = (ev) => {
+        // Permission denied / no-speech etc. — degrade gracefully, don't freeze.
+        if (ev?.error === 'not-allowed' || ev?.error === 'service-not-allowed') {
+          manualStopRef.current = true
+          setValue((v) => (v ? v : 'Summarize the audio notes'))
+        }
         setListening(false)
-        setValue((v) => (v ? v : 'Summarize the audio notes'))
       }
+
       recog.onend = () => {
+        // Browsers may end on silence even in continuous mode — restart unless
+        // the user explicitly stopped it.
+        if (!manualStopRef.current) {
+          try {
+            recog.start()
+            return
+          } catch {
+            /* fall through to stop */
+          }
+        }
         setListening(false)
-        clearTimeout(fallbackTimer)
       }
+
       recogRef.current = recog
       recog.start()
       setListening(true)
-      fallbackTimer = setTimeout(() => {
-        if (!gotResult) {
-          try { recog.stop() } catch {}
-          setValue((v) => (v ? v : 'What is the reflection of light?'))
-        }
-      }, 6000)
     } catch {
       setListening(false)
       setValue((v) => (v ? v : 'What is the reflection of light?'))

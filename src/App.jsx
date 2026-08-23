@@ -333,7 +333,11 @@ export default function App() {
 
         {/* Right evidence panel */}
         <div className="hidden w-[340px] shrink-0 xl:block">
-          <EvidenceViewer evidence={evidence} keyStatus={keyStatus} fallbackFrame={`${lecture.frameBase}/frame_0000.jpg`} />
+          <EvidenceViewer
+            evidence={evidence}
+            keyStatus={keyStatus}
+            videoSrc={`/${(sampleData.find((d) => d.modality === 'video_transcript')?.source_file) || 'lecture.mp4'}`}
+          />
         </div>
       </div>
     </div>
