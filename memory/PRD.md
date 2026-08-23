@@ -21,6 +21,14 @@ React, Vite, Tailwind CSS and Lucide Icons, built into the existing repo
 - `EvidenceViewer.jsx` — keyframe player w/ onError fallback to frame_0000.jpg + transcript quote
 - `App.jsx` — orchestrator (chats, send flow, evidence resolution)
 
+## Root-cause fix (2026-06) — verified iteration_7 (6/6)
+- CORE ISSUE behind "always offline": the model `gemini-3.6-flash` was QUOTA-EXHAUSTED
+  (HTTP 429 "You exceeded your current quota") on both RAG + backup keys, and the
+  SIDEKICK key is 403 ("project has been denied access"). Every live call failed → offline.
+- FIX: default model → `gemini-3.5-flash` (still has quota on these keys, ~3s grounded answers);
+  added MODEL_CHAIN=[env, gemini-3.5-flash, gemini-flash-latest] with callWithModelFallback()
+  advancing on 429/404/500/503; raised FETCH_TIMEOUT to 20s. Verified live grounded answers.
+
 ## Resilience refactor (2026-06) — verified iteration_6
 - PER-REQUEST recovery: no sticky global offline flag; every query re-attempts online fresh
   (verified via console — online RAG is re-tried on each new query)

@@ -5,13 +5,19 @@
 // If every network call fails (or no keys are set) we fall back to a local
 // keyword search over sample_data.json and flag it as Offline Mode.
 
-const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-3.6-flash'
+const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-3.5-flash'
 const RAG_KEY = import.meta.env.VITE_GEMINI_RAG_KEY || ''
 const RAG_KEY_BACKUP = import.meta.env.VITE_GEMINI_RAG_KEY_BACKUP || ''
 const SIDEKICK_KEY = import.meta.env.VITE_GEMINI_SIDEKICK_KEY || ''
 
-const ENDPOINT = (key) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`
+// Model fallback chain: if the primary model is quota-exhausted (429) or
+// unavailable (404/503), automatically try the next one before giving up.
+const MODEL_CHAIN = [...new Set([MODEL, 'gemini-3.5-flash', 'gemini-flash-latest'])]
+// Statuses that mean "try a different model/key", not "give up".
+const RETRYABLE = new Set([429, 404, 500, 503])
+
+const ENDPOINT = (key, model) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
 
 const RAG_SYSTEM_PROMPT = (ctx) =>
   `You are an academic retrieval engine. Answer the user's question using ONLY the provided JSON context.
@@ -42,7 +48,7 @@ Context Data: ${JSON.stringify({
 const SIDEKICK_SYSTEM_PROMPT = `You are a friendly, concise study tutor. The student's question was NOT found in their lecture material, so answer from your own general knowledge. Keep it short (2-4 sentences), accurate and encouraging. Do NOT invent lecture timestamps or citations.`
 
 // Fetch timeout (ms) for every online request.
-const FETCH_TIMEOUT = 10000
+const FETCH_TIMEOUT = 20000
 
 // Safely group the flat lecture DB into {transcript, audio_notes, text_notes},
 // always returning arrays even if the input is missing/malformed.
@@ -106,12 +112,12 @@ function toContents(history, question) {
   return contents
 }
 
-async function callGemini({ key, systemPrompt, contents, temperature }) {
+async function callGemini({ key, model, systemPrompt, contents, temperature }) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
   let res
   try {
-    res = await fetch(ENDPOINT(key), {
+    res = await fetch(ENDPOINT(key, model), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -148,27 +154,43 @@ async function callGemini({ key, systemPrompt, contents, temperature }) {
   return sanitizeText(rawText)
 }
 
-// Pipeline A with automatic backup-key retry on rate limits.
+// Try one key across the whole model fallback chain. Only 429/404/500/503
+// (quota / model unavailable) advance to the next model — other errors throw.
+async function callWithModelFallback({ key, systemPrompt, contents, temperature }) {
+  let lastErr = new Error('No model available')
+  for (const model of MODEL_CHAIN) {
+    try {
+      return await callGemini({ key, model, systemPrompt, contents, temperature })
+    } catch (e) {
+      lastErr = e
+      if (!RETRYABLE.has(e.status)) throw e
+      console.warn(`[LectureLens] Model ${model} unavailable (HTTP ${e.status}); trying next model…`)
+    }
+  }
+  throw lastErr
+}
+
+// Pipeline A — RAG key across all models, then backup key across all models.
 async function runRag({ systemPrompt, contents }) {
   try {
-    return await callGemini({ key: RAG_KEY, systemPrompt, contents, temperature: 0.0 })
+    return await callWithModelFallback({ key: RAG_KEY, systemPrompt, contents, temperature: 0.0 })
   } catch (e) {
-    if ((e.status === 429 || e.status === 403 || e.status === 500) && RAG_KEY_BACKUP) {
-      return await callGemini({ key: RAG_KEY_BACKUP, systemPrompt, contents, temperature: 0.0 })
+    if ((RETRYABLE.has(e.status) || e.status === 403) && RAG_KEY_BACKUP) {
+      return await callWithModelFallback({ key: RAG_KEY_BACKUP, systemPrompt, contents, temperature: 0.0 })
     }
     throw e
   }
 }
 
-// Pipeline B — tries the dedicated Sidekick key first, then gracefully falls
-// back to the RAG keys so the tutor still answers if the Sidekick key is
-// restricted/unauthorized (e.g. returns 403).
+// Pipeline B — tries the dedicated Sidekick key first (across all models),
+// then gracefully falls back to the RAG keys so the tutor still answers if the
+// Sidekick key is restricted/unauthorized (403) or quota-exhausted (429).
 async function runSidekick({ contents }) {
   const keys = [...new Set([SIDEKICK_KEY, RAG_KEY, RAG_KEY_BACKUP].filter(Boolean))]
   let lastErr = new Error('No usable key for Sidekick')
   for (const key of keys) {
     try {
-      return await callGemini({ key, systemPrompt: SIDEKICK_SYSTEM_PROMPT, contents, temperature: 0.7 })
+      return await callWithModelFallback({ key, systemPrompt: SIDEKICK_SYSTEM_PROMPT, contents, temperature: 0.7 })
     } catch (e) {
       lastErr = e
       console.warn(`[LectureLens] Sidekick key failed (HTTP ${e.status || '?'}), trying next…`)

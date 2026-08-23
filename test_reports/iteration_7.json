@@ -1,0 +1,26 @@
+{
+  "summary": "Frontend-only verification of the model-switch fix (gemini-3.6-flash -> gemini-3.5-flash) with MODEL_CHAIN fallback and 20s timeout. All 6 requested assertions PASS on a fresh load. The 'always offline' bug is RESOLVED — Q1 returned a LIVE grounded-badge answer with 3 clickable citations within seconds, and every downstream flow (citation->lecture sync, source-labeled citations, out-of-scope->sidekick, model pill, regressions) works.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "src/services/gemini.js: MODEL_CHAIN correctly de-duplicates env model, gemini-3.5-flash, gemini-flash-latest and advances only on 429/404/500/503 — clean design.",
+    "runRag() falls back to RAG_KEY_BACKUP on retryable + 403 statuses across the whole model chain — matches problem statement.",
+    "FETCH_TIMEOUT bumped to 20000ms — resolves the 10s abort issue flagged in iteration_6.",
+    "sanitizeText() strips ```json fences and unwraps {answer:...} — verified upstream in prior iterations.",
+    "keyStatus.model exposed in the right-panel footer via a font-mono pill — verified rendering 'gemini-3.5-flash'."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "6/6 PASS"},
+  "test_credentials": "None. Gemini keys present in frontend/.env.",
+  "seed_data_creation": "localStorage cleared at run start; New Chat between assertions.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Desktop 1920x900. Live runs on gemini-3.5-flash return grounded-badge in ~2-5s. Sidekick key is still 403 (project denied) but runSidekick correctly falls through to RAG keys and produces a sidekick-badge answer for OOS queries. Verified this run: Q1 'What is reflection of light?' -> grounded-badge, 3 citations, citation click populated evidence-quote+evidence-speaker. Q2 'Summarize the audio notes' -> grounded-badge with inline [Audio Notes]/[Summary Notes]/[Video Transcript @ MM:SS] labels. Q3 'Who won the FIFA World Cup?' -> sidekick-badge with correct 2022 Argentina answer. Model pill = gemini-3.5-flash. send-btn correctly disabled on empty input; export-btn enabled after Q/A; sidebar-toggle works; new-chat-btn creates thread.",
+  "rca of the issue": "Original bug: default model VITE_GEMINI_MODEL=gemini-3.6-flash was quota-exhausted (429) on RAG + backup keys and sidekick key 403, so every live call failed and the app fell back to offline. Fix (verified): (1) VITE_GEMINI_MODEL=gemini-3.5-flash in frontend/.env, (2) MODEL_CHAIN=[env, gemini-3.5-flash, gemini-flash-latest] with callWithModelFallback advancing on RETRYABLE=[429,404,500,503], (3) FETCH_TIMEOUT raised to 20000ms. Verification: fresh page load + 'What is reflection of light?' returns HTTP 200 grounded response with data-testid=grounded-badge in a few seconds, no offline-badge, no error-notification. Bug closed."
+}
