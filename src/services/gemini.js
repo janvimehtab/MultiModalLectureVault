@@ -5,7 +5,7 @@
 // If every network call fails (or no keys are set) we fall back to a local
 // keyword search over sample_data.json and flag it as Offline Mode.
 
-const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.0-flash'
+const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-3.6-flash'
 const RAG_KEY = import.meta.env.VITE_GEMINI_RAG_KEY || ''
 const RAG_KEY_BACKUP = import.meta.env.VITE_GEMINI_RAG_KEY_BACKUP || ''
 const SIDEKICK_KEY = import.meta.env.VITE_GEMINI_SIDEKICK_KEY || ''
@@ -38,15 +38,23 @@ function toContents(history, question) {
 }
 
 async function callGemini({ key, systemPrompt, contents, temperature }) {
-  const res = await fetch(ENDPOINT(key), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents,
-      generationConfig: { temperature },
-    }),
-  })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 25000)
+  let res
+  try {
+    res = await fetch(ENDPOINT(key), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents,
+        generationConfig: { temperature },
+      }),
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timer)
+  }
 
   if (!res.ok) {
     const err = new Error(`Gemini HTTP ${res.status}`)
@@ -55,8 +63,10 @@ async function callGemini({ key, systemPrompt, contents, temperature }) {
   }
 
   const data = await res.json()
-  const text = data?.candidates?.[0]?.content?.parts
-    ?.map((p) => p.text)
+  const parts = data?.candidates?.[0]?.content?.parts || []
+  const text = parts
+    .filter((p) => p && p.thought !== true && typeof p.text === 'string')
+    .map((p) => p.text)
     .join('')
     .trim()
   if (!text) throw new Error('Empty Gemini response')
@@ -73,6 +83,23 @@ async function runRag({ systemPrompt, contents }) {
     }
     throw e
   }
+}
+
+// Pipeline B — tries the dedicated Sidekick key first, then gracefully falls
+// back to the RAG keys so the tutor still answers if the Sidekick key is
+// restricted/unauthorized (e.g. returns 403).
+async function runSidekick({ contents }) {
+  const keys = [...new Set([SIDEKICK_KEY, RAG_KEY, RAG_KEY_BACKUP].filter(Boolean))]
+  let lastErr = new Error('No usable key for Sidekick')
+  for (const key of keys) {
+    try {
+      return await callGemini({ key, systemPrompt: SIDEKICK_SYSTEM_PROMPT, contents, temperature: 0.7 })
+    } catch (e) {
+      lastErr = e
+      console.warn(`[LectureLens] Sidekick key failed (HTTP ${e.status || '?'}), trying next…`)
+    }
+  }
+  throw lastErr
 }
 
 // ---------------------------------------------------------------------------
@@ -94,27 +121,30 @@ function tokenize(str) {
 
 export function offlineSearch(query, sampleData) {
   const qTokens = tokenize(query)
+  const wordRe = (t) => new RegExp('\\b' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i')
   const scored = sampleData
     .map((item) => {
       const text = item.content.toLowerCase()
-      let score = 0
-      qTokens.forEach((t) => {
-        if (text.includes(t)) score += 1
-      })
-      // prefer real explanatory transcript / notes over bare frame captions
+      // distinct whole-word matches (avoids 'won' matching 'wondered')
+      const hits = qTokens.filter((t) => wordRe(t).test(text))
+      let score = hits.length
       if (item.modality === 'video_frame_ocr') score -= 0.5
-      return { item, score }
+      return { item, score, distinct: hits.length }
     })
-    .filter((s) => s.score > 0)
+    .filter((s) => s.distinct > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
 
-  if (scored.length === 0) {
-    return {
-      role: 'model',
-      source: 'offline',
-      text: `I couldn't find anything about that in the lecture material. Try asking about reflection, refraction, Snell's Law, or why windows look wavy.`,
-    }
+  const topDistinct = scored[0]?.distinct || 0
+  // Low-confidence -> flag out-of-scope so the caller routes to Pipeline B
+  // instead of leaking irrelevant lecture text (e.g. "Who won the World Cup?").
+  // Require >=2 distinct query words to match, unless the query itself is a
+  // single meaningful term.
+  const minNeeded = qTokens.length <= 1 ? 1 : 2
+  const outOfScope = qTokens.length === 0 || scored.length === 0 || topDistinct < minNeeded
+
+  if (outOfScope) {
+    return { role: 'model', source: 'offline', outOfScope: true, text: 'OUT_OF_SCOPE' }
   }
 
   const bullets = scored
@@ -127,7 +157,32 @@ export function offlineSearch(query, sampleData) {
   return {
     role: 'model',
     source: 'offline',
+    outOfScope: false,
     text: `Here is the grounded evidence I found in the lecture material:\n\n${bullets}`,
+  }
+}
+
+// Offline handler: grounded evidence, or route low-confidence queries to the
+// Sidekick (Pipeline B) when reachable, else a clean out-of-scope message.
+async function handleOffline(question, history, sampleData) {
+  const res = offlineSearch(question, sampleData)
+  if (!res.outOfScope) return res
+  return sidekickOrCleanOOS(question, history)
+}
+
+// Try Pipeline B; if every key fails, return a clean out-of-scope message
+// (never leak lecture bullets when the query was judged out of scope).
+async function sidekickOrCleanOOS(question, history) {
+  try {
+    const sideText = await runSidekick({ contents: toContents(history, question) })
+    return { role: 'model', source: 'sidekick', text: sideText }
+  } catch (e) {
+    console.warn('[LectureLens] Sidekick unavailable, returning clean OOS:', e.message)
+    return {
+      role: 'model',
+      source: 'offline',
+      text: "That topic isn't covered in this lecture's material. Try asking about the concepts, definitions or diagrams from the lecture.",
+    }
   }
 }
 
@@ -138,7 +193,7 @@ export async function askQuestion(question, history, sampleData, onStatus) {
   // No keys configured at all -> straight to offline mode.
   if (!RAG_KEY && !SIDEKICK_KEY) {
     onStatus?.('offline')
-    return offlineSearch(question, sampleData)
+    return handleOffline(question, history, sampleData)
   }
 
   const contents = toContents(history, question)
@@ -154,7 +209,7 @@ export async function askQuestion(question, history, sampleData, onStatus) {
   } catch (e) {
     console.warn('[LectureLens] RAG pipeline failed, using offline engine:', e.message)
     onStatus?.('offline')
-    return offlineSearch(question, sampleData)
+    return handleOffline(question, history, sampleData)
   }
 
   // Robust out-of-scope detection (spacing/case tolerant).
@@ -164,31 +219,11 @@ export async function askQuestion(question, history, sampleData, onStatus) {
     return { role: 'model', source: 'grounded', text: ragText }
   }
 
-  // ---- Pipeline B: sidekick tutor ----
-  if (!SIDEKICK_KEY) {
-    // No sidekick key: honestly report out of scope offline-style.
-    onStatus?.('offline')
-    return {
-      role: 'model',
-      source: 'offline',
-      text: `That topic isn't covered in this lecture's material. (Add a Sidekick API key to get general-knowledge help.)`,
-    }
-  }
-
-  try {
-    onStatus?.('sidekick')
-    const sideText = await callGemini({
-      key: SIDEKICK_KEY,
-      systemPrompt: SIDEKICK_SYSTEM_PROMPT,
-      contents: toContents(history, question),
-      temperature: 0.7,
-    })
-    return { role: 'model', source: 'sidekick', text: sideText }
-  } catch (e) {
-    console.warn('[LectureLens] Sidekick pipeline failed:', e.message)
-    onStatus?.('offline')
-    return offlineSearch(question, sampleData)
-  }
+  // ---- Pipeline B: sidekick tutor (resilient across keys) ----
+  // The query is out of scope: always return either a Sidekick answer or a
+  // clean OOS message — never lecture bullets.
+  onStatus?.('sidekick')
+  return sidekickOrCleanOOS(question, history)
 }
 
 export const keyStatus = {

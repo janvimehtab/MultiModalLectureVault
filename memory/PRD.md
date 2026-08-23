@@ -22,21 +22,22 @@ React, Vite, Tailwind CSS and Lucide Icons, built into the existing repo
 - `App.jsx` — orchestrator (chats, send flow, evidence resolution)
 
 ## Implemented (2026-06)
-- 3-column responsive dark UI (spec theme) with glow/shimmer animations
-- Dual-bot pipeline A (RAG, temp 0.0, backup-key retry) + B (Sidekick, temp 0.7, glowing badge)
-- Robust OUT_OF_SCOPE detection (`.toUpperCase().includes`)
-- Offline keyword-search fallback with "Offline Mode" badge
-- Clickable timestamp citations → keyframe + quote in evidence viewer, broken-image fallback
-- Voice input with unsupported/denied fallback (+ no-result timeout); empty-send guard
-- localStorage chat history, auto-title from first query, New Chat, delete, quick-start chips
-- **Multi-Lecture Vault** (`src/data/lectures.js`): sidebar lecture switcher across 3 lectures
-  (Wavy Window Paradox / Neural Networks 101 / Photosynthesis), each with its own data,
-  frames (`/frames/<id>/`), accent + quick prompts. Switching starts a lecture-bound chat;
-  chats carry a lecture accent dot; header active-lecture chip. Verified 13/13 (iteration_2).
-- **Study Export** (`src/services/exportNotes.js`): Export Notes button prints a clean revision
-  sheet (Q/A + cited keyframes) via a new window. Disabled on empty threads.
+- Gemini-minimalist dark theme (black #131314 / card #1e1f20 / accent #a8c7fa), decluttered
+- Collapsible left sidebar (272px ⇄ 72px icon rail) via PanelLeft toggle
+- LIVE Gemini via user keys, model `gemini-3.6-flash` (thinking-part-safe extraction, 25s timeout)
+- Dual-bot pipeline A (RAG, temp 0.0) + B (Sidekick, temp 0.7, glowing badge)
+  - NOTE: user's dedicated SIDEKICK key returns HTTP 403 (unauthorized); Pipeline B
+    gracefully falls back to the working RAG key(s) so the tutor still answers
+- Strict out-of-scope: Pipeline A OUT_OF_SCOPE → Sidekick or clean OOS message (never leaks lecture text)
+- Offline engine uses whole-word (\b) matching + ≥2 distinct hits to avoid false positives
+- Clickable citations → keyframe + quote; broken-image onError fallback to lecture frame_0000.jpg
+- Voice input (Web Speech + timeout fallback); empty-send guard
+- localStorage chats, auto-title, New Chat, delete, quick-start chips
+- Multi-Lecture Vault (`src/data/lectures.js`): 3 lectures with own data/frames/prompts/accent
+- Study Export (`src/services/exportNotes.js`): printable revision notes with cited frames
+- Tested: iteration_1..4 (latest 5/5 live-Gemini OOS retest 100%)
 
 ## Backlog / Next
+- Replace the dead VITE_GEMINI_SIDEKICK_KEY (403) with a valid key; reflect real key status
 - P1: Image-query pipeline (currently mock attachment chip only)
 - P2: Nearest-available-frame matching for lectures with sparse frames
-- P2: Add more lectures / user-uploaded lecture ingestion

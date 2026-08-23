@@ -31,6 +31,7 @@ export default function App() {
   const [status, setStatus] = useState(null)
   const [evidence, setEvidence] = useState(null)
   const [mobileNav, setMobileNav] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const scrollRef = useRef(null)
   const didInit = useRef(false)
 
@@ -208,11 +209,15 @@ export default function App() {
   }[status]
 
   return (
-    <div className="app-backdrop flex h-screen flex-col overflow-hidden text-slate-200">
+    <div className="app-backdrop flex h-screen flex-col overflow-hidden text-[#e3e3e3]">
       <Header mediaSources={mediaSources} lecture={lecture} />
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[268px_1fr] xl:grid-cols-[268px_1fr_340px]">
-        <div className="hidden md:block">
+      <div className="flex min-h-0 flex-1">
+        {/* Left sidebar (desktop) — collapsible */}
+        <div
+          className="hidden shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out md:block"
+          style={{ width: collapsed ? 72 : 272 }}
+        >
           <Sidebar
             chats={chats}
             activeId={activeId}
@@ -222,9 +227,12 @@ export default function App() {
             onNew={handleNew}
             onSelect={handleSelect}
             onDelete={handleDelete}
+            collapsed={collapsed}
+            onToggle={() => setCollapsed((s) => !s)}
           />
         </div>
 
+        {/* Mobile sidebar drawer */}
         {mobileNav && (
           <div className="fixed inset-0 z-40 flex md:hidden">
             <div className="w-72">
@@ -237,67 +245,64 @@ export default function App() {
                 onNew={handleNew}
                 onSelect={handleSelect}
                 onDelete={handleDelete}
+                collapsed={false}
+                onToggle={() => setMobileNav(false)}
               />
             </div>
-            <div className="flex-1 bg-slate-950/60" onClick={() => setMobileNav(false)}>
-              <button className="m-3 rounded-lg bg-slate-800 p-2 text-slate-200">
+            <div className="flex-1 bg-black/60" onClick={() => setMobileNav(false)}>
+              <button className="m-3 rounded-lg bg-[#1e1f20] p-2 text-[#e3e3e3]">
                 <X size={18} />
               </button>
             </div>
           </div>
         )}
 
-        <main className="flex min-h-0 flex-col">
+        {/* Center chat canvas */}
+        <main className="flex min-h-0 flex-1 flex-col">
           {/* Canvas top bar: lecture + export */}
-          <div className="flex items-center gap-2 border-b border-slate-800/60 px-4 py-2.5">
+          <div className="flex items-center gap-2 border-b border-[#2d2e30] px-4 py-2.5">
             <button
               data-testid="mobile-nav-btn"
               onClick={() => setMobileNav(true)}
-              className="rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-200 md:hidden"
+              className="rounded-lg border border-[#2d2e30] bg-[#1e1f20] p-2 text-[#e3e3e3] md:hidden"
             >
               <Menu size={16} />
             </button>
             <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: lecture.accent }} />
-            <span className="truncate text-[13px] font-medium text-slate-300">
+            <span className="truncate text-[13px] font-medium text-[#c4c7c5]">
               {activeChat?.title || lecture.title}
             </span>
-            <span className="ml-auto flex items-center gap-3">
-              <span className="hidden text-[11px] text-slate-500 sm:inline">{lecture.subject}</span>
-              <button
-                data-testid="export-btn"
-                onClick={handleExport}
-                disabled={!messages.length}
-                className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-colors ${
-                  messages.length
-                    ? 'border-slate-700 bg-slate-800/70 text-slate-200 hover:border-gold/60 hover:text-gold'
-                    : 'cursor-not-allowed border-slate-800 bg-slate-900 text-slate-600'
-                }`}
-                title="Export as printable revision notes"
-              >
-                <Download size={14} /> Export Notes
-              </button>
-            </span>
+            <button
+              data-testid="export-btn"
+              onClick={handleExport}
+              disabled={!messages.length}
+              className={`ml-auto flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-colors ${
+                messages.length
+                  ? 'border-[#2d2e30] bg-[#1e1f20] text-[#e3e3e3] hover:border-gold/60 hover:text-gold'
+                  : 'cursor-not-allowed border-[#2d2e30] bg-[#131314] text-[#5f6368]'
+              }`}
+              title="Export as printable revision notes"
+            >
+              <Download size={14} /> <span className="hidden sm:inline">Export Notes</span>
+            </button>
           </div>
 
-          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-6" data-testid="chat-canvas">
+          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-8" data-testid="chat-canvas">
             {messages.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-center">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-xl shadow-blue-500/30">
-                  <Sparkles size={26} className="text-white" />
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#a8c7fa]">
+                  <Sparkles size={24} className="text-[#0b0b0c]" />
                 </div>
-                <h2 className="max-w-md text-2xl font-bold tracking-tight text-slate-100 md:text-3xl">
+                <h2 className="max-w-md text-2xl font-semibold tracking-tight text-[#e3e3e3] md:text-[28px]">
                   What would you like to learn today?
                 </h2>
-                <p className="mt-2 text-[13px] text-slate-500">
-                  Grounded answers from <span style={{ color: lecture.accent }}>{lecture.title}</span> — video, audio &amp; notes.
-                </p>
-                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                <div className="mt-7 flex flex-wrap justify-center gap-2">
                   {lecture.prompts.map((p, i) => (
                     <button
                       key={p}
                       data-testid={`quick-prompt-${i}`}
                       onClick={() => handleSend(p)}
-                      className="rounded-full border border-slate-700 bg-slate-800/60 px-4 py-2 text-[13px] text-slate-200 transition-colors hover:border-blue-500/60 hover:bg-slate-800 hover:text-blue-200"
+                      className="rounded-full border border-[#2d2e30] bg-[#1e1f20] px-4 py-2 text-[13px] text-[#c4c7c5] transition-colors hover:border-[#a8c7fa]/40 hover:text-[#a8c7fa]"
                     >
                       {p}
                     </button>
@@ -305,13 +310,13 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <div className="mx-auto flex max-w-3xl flex-col gap-5">
+              <div className="mx-auto flex max-w-3xl flex-col gap-6">
                 {messages.map((m) => (
                   <AnswerCard key={m.id} message={m} onCite={handleCite} />
                 ))}
                 {busy && (
-                  <div data-testid="typing-indicator" className="flex items-center gap-2 pl-1 text-slate-400">
-                    <div className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-800/70 px-3 py-2">
+                  <div data-testid="typing-indicator" className="flex items-center gap-2 pl-1 text-[#9aa0a6]">
+                    <div className="flex items-center gap-1 rounded-full border border-[#2d2e30] bg-[#1e1f20] px-3 py-2">
                       <span className="dot animate-blink" style={{ animationDelay: '0ms' }} />
                       <span className="dot animate-blink" style={{ animationDelay: '200ms' }} />
                       <span className="dot animate-blink" style={{ animationDelay: '400ms' }} />
@@ -326,7 +331,8 @@ export default function App() {
           <SearchPanel onSend={handleSend} busy={busy} />
         </main>
 
-        <div className="hidden xl:block">
+        {/* Right evidence panel */}
+        <div className="hidden w-[340px] shrink-0 xl:block">
           <EvidenceViewer evidence={evidence} keyStatus={keyStatus} fallbackFrame={`${lecture.frameBase}/frame_0000.jpg`} />
         </div>
       </div>

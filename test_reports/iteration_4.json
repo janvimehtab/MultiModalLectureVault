@@ -1,0 +1,25 @@
+{
+  "summary": "Frontend-only retest of iteration_3 fix. Primary OOS-sidekick regression is fixed: 'Who won the FIFA World Cup?' and 'What is the capital of France?' both render sidekick-badge ('Suggested by AI (Outside Lecture Scope)') with a real general-knowledge answer, NO lecture bullets leaked. Pipeline B's SIDEKICK_KEY still 403s (console: '[LectureLens] Sidekick key failed (HTTP 403), trying next…'), but the new fallback chain (SIDEKICK -> RAG -> RAG_BACKUP) succeeds and OOS decision is preserved. All 5 scenarios pass 5/5.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(Non-blocking) VITE_GEMINI_SIDEKICK_KEY still returns HTTP 403 for gemini-3.6-flash. Fallback masks it, but the dedicated key is effectively dead — consider replacing so the sidekick badge in status footer accurately reflects a working key."
+  ],
+  "critical_code_review_comments": [
+    "src/services/gemini.js: sidekickOrCleanOOS + whole-word offlineSearch + AbortController(25s) all landed correctly; OOS decision from Pipeline A is now honored on fallback so lecture text never leaks.",
+    "The status-footer 'Sidekick live' pill is optimistic — it is green even though the SIDEKICK key returns 403 on every call. Consider probing the key on boot and reflecting real status."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100% (5/5)"},
+  "test_credentials": "None (no app auth)",
+  "seed_data_creation": "None — localStorage cleared at start of run",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Verified on desktop 1920x800 against live Gemini. Correct testids: search-input (not chat-input), send-btn, export-btn (not export-notes-btn), sidebar-toggle, sidebar (width 272<->72), lecture-switcher/lecture-option-<id>, active-lecture-chip, new-chat-btn, sidekick-message/sidekick-badge, ai-message/grounded-badge/offline-badge, citation-<hhmm>, evidence-frame/quote/speaker. IMPORTANT for future scripts: multiple badges accumulate across turns in same chat — use badge-count-delta or start a New Chat between assertions rather than locator.last. Timings: grounded RAG ~6-8s; sidekick fallback (after 403) ~7-12s; 40s wait is safe.",
+  "rca of the issue": "PRIOR failure RCA (now resolved): (1) SIDEKICK_KEY 403 on gemini-3.6-flash caused Pipeline B first-attempt to fail — fix added an ordered key fallback [SIDEKICK, RAG, RAG_BACKUP] in runSidekick, and one of the RAG keys serves the sidekick call successfully. (2) offlineSearch used substring includes() and matched 'won' inside 'wondered', 'world' inside 'real world' — fix switched to \\b whole-word regex and requires >=2 distinct hits (1 for single-word queries). (3) OOS decision from Pipeline A was being overwritten by fallback offline score — fix passes original OOS flag into sidekickOrCleanOOS so a clean OOS message renders if all live calls fail. Verified: FIFA + France questions both now return sidekick-message with sidekick-badge and general-knowledge text; no wavy-window/reflection/garlic terms present."
+}

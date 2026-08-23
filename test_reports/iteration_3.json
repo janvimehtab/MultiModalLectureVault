@@ -1,0 +1,34 @@
+{
+  "summary": "Frontend-only E2E of LectureLens iteration 3 (Gemini live + theme refresh + sidebar collapse). 8/9 targeted checks pass. Only OUT-OF-SCOPE SIDEKICK fails: SIDEKICK_KEY returns HTTP 403 and the offline fallback then leaks lecture bullets due to a loose substring match in offlineSearch.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Out-of-scope sidekick (Pipeline B)",
+        "issue": "Asking 'Who won the FIFA World Cup?' → Pipeline A correctly returns OUT_OF_SCOPE. Pipeline B (SIDEKICK_KEY) then returns HTTP 403 ('[LectureLens] Sidekick pipeline failed: Gemini HTTP 403') — verified via direct curl: VITE_GEMINI_SIDEKICK_KEY yields 403 while VITE_GEMINI_RAG_KEY works with HTTP 200. Fallback offlineSearch then matches 'won' inside 'wondered' and 'world' inside 'real world' (substring includes()), so the answer dumps irrelevant wavy-window and 'garlic plushy' lecture bullets under an offline-badge — the exact regression the spec forbids. sidekick-message / sidekick-badge never render.",
+        "affected_selectors": ["[data-testid=sidekick-message]", "[data-testid=sidekick-badge]", "[data-testid=offline-badge]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Replace VITE_GEMINI_SIDEKICK_KEY in /app/frontend/.env — current key returns 403 from generativelanguage.googleapis.com (likely per-model or referer restriction). RAG key on the same model works.",
+    "Harden offlineSearch (src/services/gemini.js): use whole-word matching (regex \\b) instead of text.includes(token), OR require ≥2 distinct matching tokens for a hit, OR raise the min token length above 3. Currently tokens like 'won','world','cup' produce false positives against 'wondered','real world' and leak lecture text on OOS fallback.",
+    "Consider adding a fetch AbortController/timeout to callGemini — during initial retest the live call was slow enough that a 20s poll saw no badge; a client-side timeout+retry would give a more predictable UX."
+  ],
+  "critical_code_review_comments": [
+    "src/services/gemini.js offlineSearch: `text.includes(t)` with min length 3 causes cross-topic leaks (e.g., 'won'→'wondered'). Should tokenize the *source* content the same way and compare token sets, or use \\b word boundaries.",
+    "callGemini has no timeout — a slow/hung Gemini call blocks the busy state indefinitely (no offline fallback fires). Wrap fetch in AbortController with ~20s timeout.",
+    "The offline out-of-scope branch is not resilient: when Pipeline B fails and handleOffline is invoked, if offlineSearch coincidentally scores >0 (via false-positive substring), the app silently drops the OOS intent. Track the original OOS decision from Pipeline A and force the clean OOS message regardless of offlineSearch result."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "89% (8/9)"},
+  "test_credentials": "None (no auth)",
+  "seed_data_creation": "None (localStorage cleared at start of every run)",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Passed: (1) Gemini-minimal theme rgb(19,19,20) + light-blue accents; header shows LectureLens + active-lecture-chip 'The Wavy Window Paradox' + 3 media chips; blank state shows 'What would you like to learn today?' + quick-prompt-0/1/2 ('What is reflection of light?','Summarize audio notes',\"Explain Snell's Law\"); (2) sidebar-toggle collapses 272px→72px icon rail and expands back to 272px; (3) LIVE grounded RAG: 'What is reflection of light?' → grounded-badge in ~6-7s with 3 citation pills (01:38, 01:42, 01:48) — real Gemini network call verified (POST 200 to generativelanguage.googleapis.com); (4) Clicking citation-0138 loads evidence-quote='You're looking at light bouncing off of the glass…' + evidence-speaker='— Lecturer · lecture.mp4' and evidence-frame src falls back to /frames/frame_0000.jpg with naturalWidth=1280 (broken-image guard works); (5) Multi-lecture: lecture-switcher→lecture-menu→lecture-option-neural-nets updates active-lecture-chip to 'Neural Networks 101', quick prompts change (perceptron/backpropagation/network diagram); grounded neural answer with 2 citations, evidence-frame src=/frames/neural-nets/frame_0030.jpg; (6) Export Notes opens popup titled 'What is a perceptron? — LectureLens Revision Notes' with 2 <img> figures and Q/A body; (7) send-btn disabled on empty & whitespace, enabled on text; New Chat adds a chat, reload persists count. FAILED: OOS sidekick — SIDEKICK_KEY returns 403; offline fallback leaks lecture bullets due to substring-token match in offlineSearch (tokens 'won','world' hit 'wondered','real world').",
+  "rca of the issue": "OOS SIDEKICK failure: (a) VITE_GEMINI_SIDEKICK_KEY in /app/frontend/.env is a distinct key that is NOT authorized for gemini-3.6-flash — direct curl returns 403 (RAG key works with 200). Console shows '[LectureLens] Sidekick pipeline failed: Gemini HTTP 403'. (b) When Pipeline B fails, askQuestion routes to handleOffline, which re-runs offlineSearch. offlineSearch tokenizes the query into ['won','fifa','world','cup'], then for each item does `item.content.toLowerCase().includes(t)`. 'won' is a substring of 'wondered' (wavy-window intro line) and 'world' matches other lecture snippets → topScore≥1 → outOfScope becomes false → the function returns lecture bullets under an offline-badge instead of the clean 'That topic isn't covered…' message, violating the 'must NOT dump irrelevant lecture text' contract. Mitigations: replace SIDEKICK_KEY with a key that has access to gemini-3.6-flash (primary fix); and/or fix offlineSearch to use word-boundary matching (`new RegExp('\\\\b'+t+'\\\\b')`) or require ≥2 distinct token hits; and/or pass the OOS decision from Pipeline A into handleOffline so the fallback always returns the clean OOS message when the source query was OOS."
+}
