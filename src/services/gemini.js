@@ -10,11 +10,25 @@ const RAG_KEY = import.meta.env.VITE_GEMINI_RAG_KEY || ''
 const RAG_KEY_BACKUP = import.meta.env.VITE_GEMINI_RAG_KEY_BACKUP || ''
 const SIDEKICK_KEY = import.meta.env.VITE_GEMINI_SIDEKICK_KEY || ''
 
-// Model fallback chain: if the primary model is quota-exhausted (429) or
-// unavailable (404/503), automatically try the next one before giving up.
-const MODEL_CHAIN = [...new Set([MODEL, 'gemini-3.5-flash', 'gemini-flash-latest'])]
-// Statuses that mean "try a different model/key", not "give up".
-const RETRYABLE = new Set([429, 404, 500, 503])
+// (1) MULTI-KEY ROTATION ARRAY — every request rotates through ALL keys.
+const API_KEYS = [RAG_KEY, RAG_KEY_BACKUP, SIDEKICK_KEY].filter(Boolean)
+
+// (2) MODEL FALLBACK CHAIN — working models first (so the app actually answers
+// in 2026), then the requested legacy models as last-resort fallbacks. NOTE:
+// gemini-1.5-pro / gemini-1.5-flash / gemini-1.0-pro are retired (return 404),
+// so they only act as a final safety net and are skipped instantly.
+const MODEL_CHAIN = [
+  ...new Set([
+    MODEL,
+    'gemini-3.5-flash',
+    'gemini-flash-latest',
+    'gemini-1.5-pro',
+    'gemini-1.5-flash',
+    'gemini-1.0-pro',
+  ]),
+]
+// Statuses that mean "rotate to the next key", not "give up".
+const KEY_ROTATE = new Set([429, 403, 500, 503])
 
 const ENDPOINT = (key, model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
@@ -154,49 +168,46 @@ async function callGemini({ key, model, systemPrompt, contents, temperature }) {
   return sanitizeText(rawText)
 }
 
-// Try one key across the whole model fallback chain. Only 429/404/500/503
-// (quota / model unavailable) advance to the next model — other errors throw.
-async function callWithModelFallback({ key, systemPrompt, contents, temperature }) {
-  let lastErr = new Error('No model available')
+// Unified rotation engine: for each model, rotate through every API key.
+// - 404 (model retired/unknown)     -> skip to the NEXT MODEL
+// - 429 / 403 / 5xx (quota/limits)  -> rotate to the NEXT KEY
+// - timeout / network               -> rotate to the NEXT KEY
+// Returns the first success; throws only if EVERY model+key combo fails.
+// There is NO sticky offline flag — this runs fresh on every request.
+async function generate({ systemPrompt, contents, temperature }) {
+  let lastErr = new Error('All keys/models exhausted')
   for (const model of MODEL_CHAIN) {
-    try {
-      return await callGemini({ key, model, systemPrompt, contents, temperature })
-    } catch (e) {
-      lastErr = e
-      if (!RETRYABLE.has(e.status)) throw e
-      console.warn(`[LectureLens] Model ${model} unavailable (HTTP ${e.status}); trying next model…`)
+    for (let i = 0; i < API_KEYS.length; i++) {
+      try {
+        return await callGemini({ key: API_KEYS[i], model, systemPrompt, contents, temperature })
+      } catch (e) {
+        lastErr = e
+        if (e.status === 404) {
+          console.warn(`[LectureLens] Model ${model} unavailable (404) — skipping to next model`)
+          break // model-level failure: no key will help, try next model
+        }
+        if (KEY_ROTATE.has(e.status) || e.isTimeout || e.name === 'NetworkError') {
+          console.warn(
+            `[LectureLens] key #${i + 1} on ${model} failed (${e.status || e.name}) — rotating to next key`,
+          )
+          continue // key-level failure: try next key on the same model
+        }
+        // Unknown error — still try the next key before giving up.
+        console.warn(`[LectureLens] key #${i + 1} on ${model} errored (${e.message}) — rotating`)
+      }
     }
   }
   throw lastErr
 }
 
-// Pipeline A — RAG key across all models, then backup key across all models.
+// Pipeline A — grounded RAG (temperature 0.0) over the full rotation.
 async function runRag({ systemPrompt, contents }) {
-  try {
-    return await callWithModelFallback({ key: RAG_KEY, systemPrompt, contents, temperature: 0.0 })
-  } catch (e) {
-    if ((RETRYABLE.has(e.status) || e.status === 403) && RAG_KEY_BACKUP) {
-      return await callWithModelFallback({ key: RAG_KEY_BACKUP, systemPrompt, contents, temperature: 0.0 })
-    }
-    throw e
-  }
+  return generate({ systemPrompt, contents, temperature: 0.0 })
 }
 
-// Pipeline B — tries the dedicated Sidekick key first (across all models),
-// then gracefully falls back to the RAG keys so the tutor still answers if the
-// Sidekick key is restricted/unauthorized (403) or quota-exhausted (429).
+// Pipeline B — sidekick tutor (temperature 0.7) over the full rotation.
 async function runSidekick({ contents }) {
-  const keys = [...new Set([SIDEKICK_KEY, RAG_KEY, RAG_KEY_BACKUP].filter(Boolean))]
-  let lastErr = new Error('No usable key for Sidekick')
-  for (const key of keys) {
-    try {
-      return await callWithModelFallback({ key, systemPrompt: SIDEKICK_SYSTEM_PROMPT, contents, temperature: 0.7 })
-    } catch (e) {
-      lastErr = e
-      console.warn(`[LectureLens] Sidekick key failed (HTTP ${e.status || '?'}), trying next…`)
-    }
-  }
-  throw lastErr
+  return generate({ systemPrompt: SIDEKICK_SYSTEM_PROMPT, contents, temperature: 0.7 })
 }
 
 // ---------------------------------------------------------------------------
@@ -305,7 +316,7 @@ export async function askQuestion(question, history, sampleData, onStatus) {
   const contents = toContents(history, question)
 
   // No keys configured at all -> local engine (still evaluated per-request).
-  if (!RAG_KEY && !RAG_KEY_BACKUP && !SIDEKICK_KEY) {
+  if (API_KEYS.length === 0) {
     onStatus?.('offline')
     return handleOffline(question, history, safeData)
   }

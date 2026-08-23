@@ -21,6 +21,15 @@ React, Vite, Tailwind CSS and Lucide Icons, built into the existing repo
 - `EvidenceViewer.jsx` — keyframe player w/ onError fallback to frame_0000.jpg + transcript quote
 - `App.jsx` — orchestrator (chats, send flow, evidence resolution)
 
+## Multi-key rotation refactor (2026-06) — verified iteration_8 (7/7)
+- Unified `API_KEYS = [RAG, RAG_BACKUP, SIDEKICK].filter(Boolean)` rotation array
+- `generate()` engine loops MODEL_CHAIN × keys: 404 → next model; 429/403/5xx/timeout/network → next key;
+  returns first success, throws only when every combo fails. No sticky offline (per-request).
+- MODEL_CHAIN: working models first (gemini-3.5-flash, gemini-flash-latest); requested legacy
+  gemini-1.5-pro/1.5-flash/1.0-pro are RETIRED (404 in 2026) → last-resort fallbacks only.
+- Safe JSON: sanitizeText() strips ```json/``` fences, returns raw text if parse fails (no offline trigger).
+- Verified: simulated 429 on key #1 → rotated to next key → grounded (not offline); fenced-JSON rendered clean.
+
 ## Root-cause fix (2026-06) — verified iteration_7 (6/6)
 - CORE ISSUE behind "always offline": the model `gemini-3.6-flash` was QUOTA-EXHAUSTED
   (HTTP 429 "You exceeded your current quota") on both RAG + backup keys, and the
